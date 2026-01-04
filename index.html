@@ -28,7 +28,8 @@
   <!-- =======================
        INSTRUCTION TEXT
        ======================= -->
-  <a-text value="Click a ring to view it in detail"
+  <a-text id="instructionText"
+          value="Click a ring to view it in detail"
           align="center"
           color="#FFD700"
           position="0 2 0"
@@ -41,7 +42,7 @@
     <!-- ITEM 1 -->
     <a-entity class="item" position="-2 0 -2">
       <a-box width="1.4" height="0.3" depth="1.4" color="#0b0b0b"></a-box>
-      <a-text value="Diamond Ring" align="center" color="#FFD700"
+      <a-text value="Gold Ring" align="center" color="#FFD700"
               position="0 0.55 0" width="3"></a-text>
       <a-entity class="ring-click"
                 gltf-model="assets/ring1.glb"
@@ -67,7 +68,7 @@
     <!-- ITEM 3 -->
     <a-entity class="item" position="2 0 -2">
       <a-box width="1.4" height="0.3" depth="1.4" color="#0b0b0b"></a-box>
-      <a-text value="Gold Ring" align="center" color="#FFD700"
+      <a-text value="Diamond Ring" align="center" color="#FFD700"
               position="0 0.55 0" width="3"></a-text>
       <a-entity class="ring-click"
                 gltf-model="assets/ring3.glb"
@@ -109,15 +110,6 @@ AFRAME.registerComponent('auto-rotate', {
   }
 });
 
-/* CURSOR LISTENER */
-AFRAME.registerComponent('cursor-listener', {
-  init() {
-    this.el.addEventListener('click', () => {
-      this.el.emit('clicked');
-    });
-  }
-});
-
 /* NORMALIZE RING */
 AFRAME.registerComponent('normalize-ring', {
   init() {
@@ -153,14 +145,18 @@ function openRing(ring) {
   if (focusedRing) return;
   focusedRing = ring;
 
+  // Hide other rings
   document.querySelectorAll('.item').forEach(i => {
     if (i !== ring.parentEl) i.setAttribute('visible', false);
   });
 
+  // Hide instruction text
+  const instruction = document.getElementById('instructionText');
+  if (instruction) instruction.setAttribute('visible', false);
+
   ring.removeAttribute('auto-rotate');
 
   const norm = JSON.parse(ring.getAttribute('data-normalized'));
-
   ring.setAttribute('position', { x: 0, y: 1.2, z: -1.4 });
   ring.setAttribute('rotation', '0 180 0');
   ring.setAttribute('scale', {
@@ -193,7 +189,7 @@ AFRAME.registerComponent('drag-rotate', {
 });
 
 /* CLOSE BUTTON */
-document.getElementById('closeBtn').addEventListener('clicked', () => {
+document.getElementById('closeBtn').addEventListener('click', () => {
   if (!focusedRing) return;
 
   const ring = focusedRing;
@@ -205,10 +201,17 @@ document.getElementById('closeBtn').addEventListener('clicked', () => {
   ring.setAttribute('scale', norm.scale);
   ring.setAttribute('rotation', norm.rot);
 
+  // Show all rings
   document.querySelectorAll('.item').forEach(i => i.setAttribute('visible', true));
+
+  // Show instruction text again
+  const instruction = document.getElementById('instructionText');
+  if (instruction) instruction.setAttribute('visible', true);
+
   document.getElementById('closeBtn').setAttribute('visible', false);
   focusedRing = null;
 });
+
 </script>
 
 </body>
