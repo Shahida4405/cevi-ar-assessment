@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CEVI RING JEWELLERY</title>
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+<style>
+  body { margin: 0; overflow: hidden; }
+</style>
+</head>
+
+<body>
+
+<a-scene
+  cursor="rayOrigin: mouse"
+  raycaster="objects: .ring-click"
+  style="background: url('assets/bg3.jpeg') center/cover no-repeat">
+
+  <!-- CAMERA -->
+  <a-entity camera position="0 1.6 3"></a-entity>
+
+  <!-- LIGHT -->
+  <a-light type="ambient" intensity="1.1"></a-light>
+  <a-light type="directional" intensity="1.5" position="1 3 2"></a-light>
+
+  <!-- SHOWCASE -->
+  <a-entity id="showcase">
+
+    <!-- ITEM 1 -->
+    <a-entity class="item" position="-2 0 -2">
+      <a-box width="1.4" height="0.3" depth="1.4" color="#0b0b0b"></a-box>
+      <a-text value="Diamond Ring" align="center" color="#FFD700"
+              position="0 0.55 0" width="3"></a-text>
+      <a-entity class="ring-click"
+                gltf-model="assets/ring1.glb"
+                rotation="0 90 0"
+                normalize-ring
+                auto-rotate="speed:10"
+                ring-item></a-entity>
+    </a-entity>
+
+    <!-- ITEM 2 -->
+    <a-entity class="item" position="0 0 -2">
+      <a-box width="1.4" height="0.3" depth="1.4" color="#0b0b0b"></a-box>
+      <a-text value="Silver Ring" align="center" color="#FFD700"
+              position="0 0.55 0" width="3"></a-text>
+      <a-entity class="ring-click"
+                gltf-model="assets/ring2.glb"
+                rotation="0 90 0"
+                normalize-ring
+                auto-rotate="speed:10"
+                ring-item></a-entity>
+    </a-entity>
+
+    <!-- ITEM 3 -->
+    <a-entity class="item" position="2 0 -2">
+      <a-box width="1.4" height="0.3" depth="1.4" color="#0b0b0b"></a-box>
+      <a-text value="Gold Ring" align="center" color="#FFD700"
+              position="0 0.55 0" width="3"></a-text>
+      <a-entity class="ring-click"
+                gltf-model="assets/ring3.glb"
+                rotation="0 90 0"
+                normalize-ring
+                auto-rotate="speed:10"
+                ring-item></a-entity>
+    </a-entity>
+
+  </a-entity>
+
+  <!-- ✅ SINGLE CLOSE BUTTON -->
+  <a-plane id="closeBtn"
+           class="ring-click"
+           cursor-listener
+           position="0 2.3 -1.2"
+           width="0.6"
+           height="0.28"
+           color="#222"
+           visible="false">
+    <a-text value="CLOSE"
+            align="center"
+            color="#FFD700"
+            position="0 0 0.01"></a-text>
+  </a-plane>
+
+</a-scene>
+
+<script>
+let focusedRing = null;
+
+/* AUTO ROTATE */
+AFRAME.registerComponent('auto-rotate', {
+  schema: { speed: { default: 20 } },
+  tick(t, d) {
+    this.el.object3D.rotation.y +=
+      THREE.MathUtils.degToRad(this.data.speed * d / 1000);
+  }
+});
+
+/* CURSOR LISTENER */
+AFRAME.registerComponent('cursor-listener', {
+  init() {
+    this.el.addEventListener('click', () => {
+      this.el.emit('clicked');
+    });
+  }
+});
+
+/* NORMALIZE RING */
+AFRAME.registerComponent('normalize-ring', {
+  init() {
+    this.el.addEventListener('model-loaded', () => {
+      const obj = this.el.object3D;
+      const box = new THREE.Box3().setFromObject(obj);
+      const size = box.getSize(new THREE.Vector3());
+      const scale = 0.55 / Math.max(size.x, size.y, size.z);
+
+      this.el.setAttribute('scale', `${scale} ${scale} ${scale}`);
+
+      const box2 = new THREE.Box3().setFromObject(obj);
+      obj.position.y -= box2.min.y;
+
+      this.el.setAttribute('data-normalized', JSON.stringify({
+        pos: obj.position.clone(),
+        scale: { x: scale, y: scale, z: scale },
+        rot: this.el.getAttribute('rotation')
+      }));
+    });
+  }
+});
+
+/* CLICK RING */
+AFRAME.registerComponent('ring-item', {
+  init() {
+    this.el.addEventListener('click', () => openRing(this.el));
+  }
+});
+
+/* OPEN RING */
+function openRing(ring) {
+  if (focusedRing) return;
+  focusedRing = ring;
+
+  document.querySelectorAll('.item').forEach(i => {
+    if (i !== ring.parentEl) i.setAttribute('visible', false);
+  });
+
+  ring.removeAttribute('auto-rotate');
+
+  const norm = JSON.parse(ring.getAttribute('data-normalized'));
+
+  ring.setAttribute('position', { x: 0, y: 1.2, z: -1.4 });
+  ring.setAttribute('rotation', '0 180 0');
+  ring.setAttribute('scale', {
+    x: norm.scale.x * 2.2,
+    y: norm.scale.y * 2.2,
+    z: norm.scale.z * 2.2
+  });
+
+  ring.setAttribute('drag-rotate', '');
+  document.getElementById('closeBtn').setAttribute('visible', true);
+}
+
+/* DRAG ROTATE */
+AFRAME.registerComponent('drag-rotate', {
+  init() {
+    let drag = false, x = 0, y = 0;
+    window.addEventListener('mousedown', e => { drag = true; x = e.clientX; y = e.clientY; });
+    window.addEventListener('mousemove', e => {
+      if (!drag) return;
+      const r = this.el.getAttribute('rotation');
+      this.el.setAttribute('rotation', {
+        x: r.x + (e.clientY - y) * 0.4,
+        y: r.y + (e.clientX - x) * 0.4,
+        z: r.z
+      });
+      x = e.clientX; y = e.clientY;
+    });
+    window.addEventListener('mouseup', () => drag = false);
+  }
+});
+
+/* CLOSE BUTTON */
+document.getElementById('closeBtn').addEventListener('clicked', () => {
+  if (!focusedRing) return;
+
+  const ring = focusedRing;
+  const norm = JSON.parse(ring.getAttribute('data-normalized'));
+
+  ring.removeAttribute('drag-rotate');
+  ring.setAttribute('auto-rotate', 'speed:10');
+  ring.setAttribute('position', norm.pos);
+  ring.setAttribute('scale', norm.scale);
+  ring.setAttribute('rotation', norm.rot);
+
+  document.querySelectorAll('.item').forEach(i => i.setAttribute('visible', true));
+  document.getElementById('closeBtn').setAttribute('visible', false);
+  focusedRing = null;
+});
+</script>
+
+</body>
+</html>
