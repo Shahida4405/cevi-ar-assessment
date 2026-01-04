@@ -21,18 +21,25 @@
   <!-- CAMERA -->
   <a-entity camera position="0 1.6 3"></a-entity>
 
-  <!-- LIGHT -->
+  <!-- LIGHTS -->
   <a-light type="ambient" intensity="1.1"></a-light>
   <a-light type="directional" intensity="1.5" position="1 3 2"></a-light>
 
-  <!-- =======================
-       INSTRUCTION TEXT
-       ======================= -->
+  <!-- INSTRUCTION TEXT -->
   <a-text id="instructionText"
           value="Click a ring to view it in detail"
           align="center"
           color="#FFD700"
           position="0 2 0"
+          width="6">
+  </a-text>
+
+  <!-- LOADING TEXT -->
+  <a-text id="loadingText"
+          value="Loading rings..."
+          align="center"
+          color="#FFD700"
+          position="0 1.6 0"
           width="6">
   </a-text>
 
@@ -80,7 +87,7 @@
 
   </a-entity>
 
-  <!-- ✅ SINGLE CLOSE BUTTON -->
+  <!-- CLOSE BUTTON -->
   <a-plane id="closeBtn"
            class="ring-click"
            position="0 2.3 -1.2"
@@ -100,6 +107,7 @@
 
 <script>
 let focusedRing = null;
+let loadedCount = 0; // Track loaded models
 
 /* AUTO ROTATE */
 AFRAME.registerComponent('auto-rotate', {
@@ -113,6 +121,7 @@ AFRAME.registerComponent('auto-rotate', {
 /* NORMALIZE RING */
 AFRAME.registerComponent('normalize-ring', {
   init() {
+    this.el.setAttribute('visible', false); // hide until model loads
     this.el.addEventListener('model-loaded', () => {
       const obj = this.el.object3D;
       const box = new THREE.Box3().setFromObject(obj);
@@ -120,7 +129,6 @@ AFRAME.registerComponent('normalize-ring', {
       const scale = 0.55 / Math.max(size.x, size.y, size.z);
 
       this.el.setAttribute('scale', `${scale} ${scale} ${scale}`);
-
       const box2 = new THREE.Box3().setFromObject(obj);
       obj.position.y -= box2.min.y;
 
@@ -129,6 +137,14 @@ AFRAME.registerComponent('normalize-ring', {
         scale: { x: scale, y: scale, z: scale },
         rot: this.el.getAttribute('rotation')
       }));
+
+      // ✅ Make the ring visible immediately
+      this.el.setAttribute('visible', true);
+
+      loadedCount++;
+      if (loadedCount === 3) {
+        document.getElementById('loadingText').setAttribute('visible', false);
+      }
     });
   }
 });
@@ -151,8 +167,7 @@ function openRing(ring) {
   });
 
   // Hide instruction text
-  const instruction = document.getElementById('instructionText');
-  if (instruction) instruction.setAttribute('visible', false);
+  document.getElementById('instructionText').setAttribute('visible', false);
 
   ring.removeAttribute('auto-rotate');
 
@@ -205,13 +220,11 @@ document.getElementById('closeBtn').addEventListener('click', () => {
   document.querySelectorAll('.item').forEach(i => i.setAttribute('visible', true));
 
   // Show instruction text again
-  const instruction = document.getElementById('instructionText');
-  if (instruction) instruction.setAttribute('visible', true);
+  document.getElementById('instructionText').setAttribute('visible', true);
 
   document.getElementById('closeBtn').setAttribute('visible', false);
   focusedRing = null;
 });
-
 </script>
 
 </body>
